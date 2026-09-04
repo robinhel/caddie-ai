@@ -10,12 +10,14 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
 )
 MODEL = "openai/gpt-oss-120b"
+MAX_STEPS = 10
 
 messages = [{"role": "system", "content": "Du är en hjälpsam assistent."}]
 tokens = 0
 
 print("Hej! Vad kan jag hjälpa dig med idag?")
 
+# kommando
 while True:
     user_input = input("> ")
     if user_input in ("quit", "exit"):
@@ -31,17 +33,22 @@ while True:
         continue
 
     messages.append({"role": "user", "content": user_input})
-    resp = client.chat.completions.create(
-        model=MODEL, messages=messages, tools=tools.SCHEMAS
-    )
-    reply = resp.choices[0].message
-    messages.append(reply)
 
-    if reply.tool_calls:
+    # The agent loop: keep going until the model answers without asking for a tool.
+    for step in range(MAX_STEPS):
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, tools=tools.SCHEMAS
+        )
+        reply = resp.choices[0].message
+        messages.append(reply)
+
+        if not reply.tool_calls:
+            break
+
         for call in reply.tool_calls:
             args = json.loads(call.function.arguments)
             result = tools.call(call.function.name, args)
-            print(f"  [{call.function.name}({args}) -> {result}]")
+            print(f"  step {step + 1}: {call.function.name}({args}) -> {result}")
             messages.append(
                 {
                     "role": "tool",
@@ -49,10 +56,8 @@ while True:
                     "content": str(result),
                 }
             )
-        resp = client.chat.completions.create(
-            model=MODEL, messages=messages, tools=tools.SCHEMAS
-        )
-        messages.append(resp.choices[0].message)
+    else:
+        print(f"Gav upp efter {MAX_STEPS} steg.")
 
     tokens = resp.usage.prompt_tokens + resp.usage.completion_tokens
-    print(resp.choices[0].message.content)
+    print(reply.content)
