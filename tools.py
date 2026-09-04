@@ -1,14 +1,49 @@
 """Tools the agent can call, plus the schemas that describe them to the model."""
 
+import ast
 import inspect
+import operator
 from datetime import datetime
+
+OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.Mod: operator.mod,
+    ast.USub: operator.neg,
+}
+
+
+def _eval(node):
+    """Walk the parse tree by hand so only arithmetic can run, never arbitrary code."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return node.value
+    if isinstance(node, ast.BinOp) and type(node.op) in OPERATORS:
+        return OPERATORS[type(node.op)](_eval(node.left), _eval(node.right))
+    if isinstance(node, ast.UnaryOp) and type(node.op) in OPERATORS:
+        return OPERATORS[type(node.op)](_eval(node.operand))
+    raise ValueError("only numbers and + - * / % ** are allowed")
 
 
 def get_current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-FUNCTIONS = {"get_current_time": get_current_time}
+def calculate(expression):
+    return _eval(ast.parse(expression, mode="eval").body)
+
+
+def get_weather(city):
+    return f"15 degrees and sunny in {city}"
+
+
+FUNCTIONS = {
+    "get_current_time": get_current_time,
+    "calculate": calculate,
+    "get_weather": get_weather,
+}
 
 
 def call(name, args):
@@ -22,6 +57,7 @@ def call(name, args):
     except Exception as e:
         return f"ERROR: {e}"
 
+
 SCHEMAS = [
     {
         "type": "function",
@@ -30,5 +66,44 @@ SCHEMAS = [
             "description": "Current date and time. Use when the user asks what time or what date it is.",
             "parameters": {"type": "object", "properties": {}},
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculate",
+            "description": "Evaluate an arithmetic expression. Always use this instead of doing the maths yourself.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "Numbers and + - * / % ** only, e.g. '47 * 213'",
+                    }
+                },
+                "required": ["expression"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Current weather in a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {"city": {"type": "string", "description": "City name"}},
+                "required": ["city"],
+            },
+        },
+    },
 ]
+
+
+if __name__ == "__main__":
+    assert calculate("47 * 213") == 10011
+    assert calculate("-2 ** 3 + 1") == -7
+    assert call("calculate", {"expression": "__import__('os')"}).startswith("ERROR")
+    assert call("calculate", {"expression": "1/0"}).startswith("ERROR")
+    assert call("get_current_time", {"": {}}).startswith("20")
+    assert call("nope", {}).startswith("ERROR")
+    print("tools ok")

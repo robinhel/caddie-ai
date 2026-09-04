@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+import random
+
+def main():
+    print("Gissa talet!")
+    number = random.randint(1, 100)
+    attempts = 0
+    while True:
+        guess = input("Ange en gissning (1-100): ")
+        try:
+            guess = int(guess)
+        except ValueError:
+            print("Ange ett giltigt heltal.")
+            continue
+        attempts += 1
+        if guess < number:
+            print("För lågt!")
+        elif guess > number:
+            print("För högt!")
+        else:
+            print(f"Rätt! Du gissade rätt på {attempts} försök.")
+            break
+
+if __name__ == "__main__":
+    main()
