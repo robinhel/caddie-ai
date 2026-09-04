@@ -1,11 +1,15 @@
+import json
 import os
 
 from openai import OpenAI
+
+import tools
 
 client = OpenAI(
     api_key=os.environ["GROQ_API_KEY"],
     base_url="https://api.groq.com/openai/v1",
 )
+MODEL = "openai/gpt-oss-120b"
 
 messages = [{"role": "system", "content": "Du är en hjälpsam assistent."}]
 tokens = 0
@@ -28,10 +32,27 @@ while True:
 
     messages.append({"role": "user", "content": user_input})
     resp = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=messages,
+        model=MODEL, messages=messages, tools=tools.SCHEMAS
     )
-    reply = resp.choices[0].message.content
-    messages.append({"role": "assistant", "content": reply})
+    reply = resp.choices[0].message
+    messages.append(reply)
+
+    if reply.tool_calls:
+        for call in reply.tool_calls:
+            args = json.loads(call.function.arguments)
+            result = tools.call(call.function.name, args)
+            print(f"  [{call.function.name}({args}) -> {result}]")
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "content": str(result),
+                }
+            )
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, tools=tools.SCHEMAS
+        )
+        messages.append(resp.choices[0].message)
+
     tokens = resp.usage.prompt_tokens + resp.usage.completion_tokens
-    print(reply)
+    print(resp.choices[0].message.content)
