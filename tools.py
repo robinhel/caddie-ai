@@ -5,6 +5,8 @@ import inspect
 import operator
 from datetime import datetime
 
+from rag import search_knowledge_base
+
 OPERATORS = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -43,6 +45,7 @@ FUNCTIONS = {
     "get_current_time": get_current_time,
     "calculate": calculate,
     "get_weather": get_weather,
+    "search_knowledge_base": search_knowledge_base,
 }
 
 
@@ -93,6 +96,27 @@ SCHEMAS = [
                 "type": "object",
                 "properties": {"city": {"type": "string", "description": "City name"}},
                 "required": ["city"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_knowledge_base",
+            "description": (
+                "Sök i användarens egna dokument. Använd alltid detta innan du svarar "
+                "på frågor om innehåll som inte är allmänt känt, och svara bara utifrån "
+                "det du får tillbaka."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Frågan, formulerad som den skulle stå i dokumentet",
+                    }
+                },
+                "required": ["query"],
             },
         },
     },
