@@ -1,0 +1,25 @@
+golf_instr = "driver andvänds för utslag, puter för green"
+
+chunk1="driver andvänds för utslag...."
+id=1
+
+chunk2="puter för green"
+id=2
+
+
+embedding_chunk1=[0.12,0.43,0.567...] 384 (färdig modell som chroma använder)
+embedding_chunk2=[...] 384
+
+
+chroma = {id=1, embedding_chunk1}
+
+________
+
+query="vad är putter"
+
+embedding_query=[0.12...] (samma modell som chroma använde för chunks -> embeddings)
+
+query_text=chroma.query(embedding_query, nearest=3)
+
+
+(query + query_text) -> prompt -> lllm -> svar
