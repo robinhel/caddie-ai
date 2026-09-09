@@ -7,10 +7,12 @@ LIMIT = CHUNK - OVERLAP - 2  # plats för överlappet och "\n\n" i nästa bit
 
 
 def paragraphs(text):
-    """Stycken, där ett stycke längre än LIMIT bryts på närmaste mellanslag."""
+    """Stycken, där ett stycke längre än LIMIT bryts vid närmaste meningsslut,
+    i andra hand vid närmaste mellanslag."""
     for para in text.split("\n\n"):
         while len(para) > LIMIT:
-            cut = para.rfind(" ", 0, LIMIT) + 1 or LIMIT
+            cut = para.rfind(". ", LIMIT // 2, LIMIT)
+            cut = cut + 2 if cut > 0 else para.rfind(" ", LIMIT // 2, LIMIT) + 1 or LIMIT
             yield para[:cut]
             para = para[cut:]
         yield para
@@ -26,7 +28,8 @@ def chunks(text):
             continue
         if cur and len(cur) + len(para) + 2 > CHUNK:
             out.append(cur)
-            cur = cur[-OVERLAP:]
+            tail = cur[-OVERLAP:]
+            cur = tail[tail.find(" ") + 1 :]  # börja överlappet på ett helt ord
         cur = f"{cur}\n\n{para}" if cur else para
     if cur:
         out.append(cur)
@@ -41,7 +44,7 @@ if __name__ == "__main__":
     assert len(cs) > 1, cs
     assert all(len(c) <= CHUNK for c in cs), [len(c) for c in cs]
     assert all(len(c) > CHUNK / 2 for c in cs[:-1]), [len(c) for c in cs]
-    assert all(cs[i][-OVERLAP:] in cs[i + 1] for i in range(len(cs) - 1))
+    assert all(cs[i + 1][:40] in cs[i] for i in range(len(cs) - 1))
 
     # en vägg text utan tomrader ska också delas, och inte mitt i ett ord
     wall = chunks(para * 20)
