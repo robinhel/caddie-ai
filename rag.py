@@ -1,9 +1,13 @@
 import pathlib
 
+import chromadb
+
 DOCS = pathlib.Path("docs")
 CHUNK = 800
 OVERLAP = 100
 LIMIT = CHUNK - OVERLAP - 2  # plats för överlappet och "\n\n" i nästa bit
+
+_col = None
 
 
 def paragraphs(text):
@@ -16,6 +20,14 @@ def paragraphs(text):
             yield para[:cut]
             para = para[cut:]
         yield para
+
+
+def collection():
+    """Chromas "docs"-collection. Lat: första anropet laddar ner embeddingmodellen."""
+    global _col
+    if _col is None:
+        _col = chromadb.PersistentClient("chroma").get_or_create_collection("docs")
+    return _col
 
 
 def chunks(text):
@@ -36,6 +48,19 @@ def chunks(text):
     return out
 
 
+def ingest():
+    """Chunka alla dokument under DOCS och lägg in dem i collection()."""
+    ids, docs = [], []
+    for path in sorted(DOCS.rglob("*.md")) + sorted(DOCS.rglob("*.txt")):
+        for i, chunk in enumerate(chunks(path.read_text())):
+            ids.append(f"{path}#{i}")
+            docs.append(chunk)
+    if not docs:
+        return f"inga .md- eller .txt-filer i {DOCS}/ — lägg in dokument först"
+    collection().upsert(ids=ids, documents=docs)  # upsert: omkörning skriver över
+    return f"{len(docs)} chunks indexerade"
+
+
 if __name__ == "__main__":
     para = "Detta är en mening som fyller ut stycket. " * 5  # ~210 tecken
     long = "\n\n".join(f"Stycke {i}. {para}" for i in range(20))
@@ -52,4 +77,4 @@ if __name__ == "__main__":
     assert not any(c.endswith(("stycke", "fyll")) for c in wall)
 
     assert chunks("Kort text.") == ["Kort text."]
-    print(f"ok: {len(cs)} bitar, längder {[len(c) for c in cs]}")
+    print(ingest())

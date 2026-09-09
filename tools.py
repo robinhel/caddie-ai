@@ -5,6 +5,8 @@ import inspect
 import operator
 from datetime import datetime
 
+import rag
+
 OPERATORS = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -39,10 +41,20 @@ def get_weather(city):
     return f"15 degrees and sunny in {city}"
 
 
+def search_knowledge_base(query):
+    """De tre mest liknande chunksen ur docs/, som en textklump."""
+    col = rag.collection()
+    if col.count() == 0:
+        return "ERROR: kunskapsbasen är tom. Kör 'uv run rag.py' först."
+    res = col.query(query_texts=[query], n_results=3)
+    return "\n---\n".join(f"[{i}]\n{d}" for i, d in zip(res["ids"][0], res["documents"][0]))
+
+
 FUNCTIONS = {
     "get_current_time": get_current_time,
     "calculate": calculate,
     "get_weather": get_weather,
+    "search_knowledge_base": search_knowledge_base,
 }
 
 
@@ -93,6 +105,27 @@ SCHEMAS = [
                 "type": "object",
                 "properties": {"city": {"type": "string", "description": "City name"}},
                 "required": ["city"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_knowledge_base",
+            "description": (
+                "Search the local document collection. Always search before answering "
+                "questions about content that is not general knowledge, and answer only "
+                "from what the search returns."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "the question, phrased as it would appear in the document",
+                    }
+                },
+                "required": ["query"],
             },
         },
     },
