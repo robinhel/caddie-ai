@@ -91,7 +91,8 @@ def get_next_tee_time(club, date):
     try:
         data = _get_json(
             f"https://mingolf.golf.se/bokning/api/Clubs/{club_id}/CourseSchedule",
-            headers={"Cookie": os.environ.get("MINGOLF_COOKIE", "")},
+            # funkar både med och utan "mgat=" framför värdet i .env
+            headers={"Cookie": "mgat=" + os.environ.get("MINGOLF_COOKIE", "").removeprefix("mgat=")},
             courseId=course_id,
             date=date,
         )

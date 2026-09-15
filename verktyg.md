@@ -63,12 +63,14 @@ ut, uppdatera MINGOLF_COOKIE". Skicka inte playersInfo vidare till modellen.
 Lägg till i FUNCTIONS och SCHEMAS (club som enum av CLUBS, date som ÅÅÅÅ-MM-DD).
 ```
 
-Lägg cookien i `.env`, aldrig i koden. Ta bara delen från `mgat=` fram till
-första `;`:
+Lägg cookien i `.env`, aldrig i koden. Snabbast: DevTools → **Application** →
+**Cookies** → `mingolf.golf.se` → `mgat`, och kopiera **Value**:
 
 ```
-MINGOLF_COOKIE=mgat=eyJ...
+MINGOLF_COOKIE=eyJ...
 ```
+
+`mgat=` framför värdet behövs inte, verktyget lägger till det själv.
 
 Cookien gäller bara i ungefär 30 minuter. Ger verktyget "inloggningen har gått
 ut", logga in på MinGolf igen, hämta en ny cookie från DevTools och byt ut
