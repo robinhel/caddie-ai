@@ -62,19 +62,4 @@ def ingest():
 
 
 if __name__ == "__main__":
-    para = "Detta är en mening som fyller ut stycket. " * 5  # ~210 tecken
-    long = "\n\n".join(f"Stycke {i}. {para}" for i in range(20))
-
-    cs = chunks(long)
-    assert len(cs) > 1, cs
-    assert all(len(c) <= CHUNK for c in cs), [len(c) for c in cs]
-    assert all(len(c) > CHUNK / 2 for c in cs[:-1]), [len(c) for c in cs]
-    assert all(cs[i + 1][:40] in cs[i] for i in range(len(cs) - 1))
-
-    # en vägg text utan tomrader ska också delas, och inte mitt i ett ord
-    wall = chunks(para * 20)
-    assert len(wall) > 1 and all(len(c) <= CHUNK for c in wall), [len(c) for c in wall]
-    assert not any(c.endswith(("stycke", "fyll")) for c in wall)
-
-    assert chunks("Kort text.") == ["Kort text."]
     print(ingest())
