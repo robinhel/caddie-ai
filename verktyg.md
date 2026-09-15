@@ -45,26 +45,27 @@ URL, vilka parametrar, vilken cookie och vilket klubb-id anropet behöver.
 ## Steg 2 — Verktyget
 
 ```
-Titta på lek/mingolf_exempel.json. Det är svaret från MinGolfs anrop för
-starttider: <klistra in URL och parametrar från steg 1, inte cookien>.
-Skriv get_next_tee_time(club, date) i tools.py som gör samma anrop och
-returnerar den första tiden som har lediga platser och inte redan har passerat.
-Återanvänd _get_json (lägg till en headers-parameter om det behövs) och ta
-cookien från miljövariabeln MINGOLF_COOKIE.
-Klubben anges som id i anropet, så lägg en liten dict CLUBS = {"namn": "id"}
-med mina klubbar: <klubbar och id:n från steg 1>. Är klubben inte med i CLUBS,
-returnera "ERROR:" och vilka klubbar som finns.
-Finns ingen ledig tid, returnera en tydlig text om det. Om anropet ger 401/403,
-returnera "ERROR: inloggningen har gått ut, uppdatera MINGOLF_COOKIE".
-Lägg till den i FUNCTIONS och SCHEMAS (club som enum av CLUBS, date som
-ÅÅÅÅ-MM-DD).
+Skriv get_next_tee_time(club, date) i tools.py. Den gör ett GET-anrop till
+https://mingolf.golf.se/bokning/api/Clubs/{club_id}/CourseSchedule?courseId={course_id}&date={date}
+med cookien från miljövariabeln MINGOLF_COOKIE. Återanvänd _get_json om den
+finns (lägg till en headers-parameter om det behövs), annars urllib.request + json.
+CLUBS = {"Wittsjö Golfklubb": ("0bfdb0f9-d311-48bf-b6ab-63ceeb80f524", "5c904943-6fec-4ebb-a659-4ca035eb736b")}
+Svaret har en lista "slots". En slot är ledig om slot["availablity"]["bookable"]
+är true (OBS felstavat "availablity"), slot["isLocked"] är false och
+slot["availablity"]["availableSlots"] > 0. slot["time"] är UTC, t.ex.
+"2026-09-15T10:30:00Z". Gör om den till Europe/Stockholm med zoneinfo.
+Returnera den första lediga tiden som inte redan har passerat, som
+"HH:MM, N lediga platser". Finns ingen: en tydlig text om det. Okänd klubb:
+"ERROR:" och vilka klubbar som finns. 401/403: "ERROR: inloggningen har gått
+ut, uppdatera MINGOLF_COOKIE". Skicka inte playersInfo vidare till modellen.
+Lägg till i FUNCTIONS och SCHEMAS (club som enum av CLUBS, date som ÅÅÅÅ-MM-DD).
 ```
 
 Lägg cookien i `.env` som `MINGOLF_COOKIE=...`, aldrig i koden. Den går ut
 efter ett tag, och då får du hämta en ny från DevTools.
 
 **Klart när:**
-`uv run --env-file .env python -c "import tools; print(tools.get_next_tee_time('<klubb>', '<datum>'))"`
+`uv run --env-file .env python -c "import tools; print(tools.get_next_tee_time('Wittsjö Golfklubb', '<datum>'))"`
 ger samma första lediga tid som du ser på MinGolf.
 
 **Fundera:** hur ska agenten veta vilket datum "i morgon" är? (Tips: den har
@@ -81,6 +82,6 @@ get_current_time först om användaren säger "i dag" eller "i morgon".
 Uppdatera README:n: nytt verktyg, MINGOLF_COOKIE i .env och en exempelfråga.
 ```
 
-**Klart när:** i appen ger *"finns det någon ledig tid på <klubb> i morgon?"*
+**Klart när:** i appen ger _"finns det någon ledig tid på <klubb> i morgon?"_
 🔧-rader för `get_current_time` och `get_next_tee_time`, och svaret stämmer med
 MinGolf.
