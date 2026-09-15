@@ -109,7 +109,7 @@ def get_free_tee_times(club, date):
             free.append(f"{start:%H:%M} ({a['availableSlots']})")
     if not free:
         return f"Inga lediga tider på {club} {date}."
-    return f"Lediga tider på {club} {date}, antal lediga platser inom parentes: {', '.join(free)}"
+    return f"{len(free)} lediga tider på {club} {date}, antal lediga platser inom parentes: {', '.join(free)}"
 
 
 def search_knowledge_base(query):
