@@ -122,7 +122,11 @@ SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "the question, phrased as it would appear in the document",
+                        "description": (
+                            "Search query in ENGLISH, phrased with the rulebook's own terms "
+                            "(e.g. 'penalty area relief', 'unplayable ball'). "
+                            "Translate if the user writes in another language."
+                        ),
                     }
                 },
                 "required": ["query"],
