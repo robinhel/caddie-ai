@@ -10,6 +10,7 @@ När du ställer en fråga skickas den till en språkmodell (`gpt-oss-120b` via 
 - **`calculate`** räknar ut matte, t.ex. hur många slag det blir med plikt. Den kör bara siffror och `+ - * / % **`, aldrig godtycklig kod.
 - **`get_current_time`** ger dagens datum och tid.
 - **`get_weather`** hämtar vädret just nu och en prognos på 3 dagar från Open-Meteo (gratis, ingen API-nyckel).
+- **`get_next_tee_time`** hämtar nästa lediga starttid på en golfklubb från MinGolf. Den läser bara tider och bokar aldrig något. Just nu finns bara Wittsjö Golfklubb inlagd (i `CLUBS` i `tools.py`).
 
 Agenten kör i en loop: modellen ber om ett verktyg, får resultatet och kan be om ett till. Det fortsätter tills den har ett svar, men högst 10 steg så att den inte fastnar.
 
@@ -33,7 +34,10 @@ Du behöver [uv](https://docs.astral.sh/uv/) och en gratis API-nyckel från [Gro
 
    ```
    GROQ_API_KEY=din-nyckel-här
+   MINGOLF_COOKIE=din-cookie-här
    ```
+
+   `MINGOLF_COOKIE` behövs bara för starttiderna. MinGolf har inget öppet API, så verktyget använder din inloggning. Logga in på [mingolf.golf.se](https://mingolf.golf.se/bokning/), öppna DevTools (Cmd+Opt+I) → **Application** → **Cookies** → `mingolf.golf.se` → `mgat` och kopiera **Value**. Cookien gäller bara i ungefär 30 minuter, sedan får du hämta en ny.
 
 2. Indexera regelboken (första gången laddas embeddingmodellen ner, så det tar en stund):
 
@@ -67,6 +71,7 @@ I webbappen syns verktygsanropen som små 🔧-rader, så man kan se vad agenten
 - Hur lång tid har jag på mig att leta efter min boll?
 - Vad räknas som "ground under repair"?
 - Jag slog ut ur banan två gånger på samma hål, hur många slag har jag då?
+- Finns det någon ledig tid på Wittsjö i morgon?
 
 ## Testa
 
@@ -80,3 +85,4 @@ uv run tools.py
 
 - Agenten vet bara det som står i regelboken. Lokala regler eller tolkningar från din klubb känner den inte till.
 - Den hämtar bara tre textbitar per sökning. Ibland missar den därför något, och då måste den söka igen.
+- Starttiderna bygger på MinGolfs interna anrop, inte ett officiellt API. Det kan sluta fungera om de ändrar sin sida, och cookien måste bytas ungefär varje halvtimme.
