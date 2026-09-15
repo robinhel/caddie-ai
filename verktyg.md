@@ -21,12 +21,13 @@ automatiska bokningar**.
    **Copy → Copy as cURL**.
 4. Kör kommandot i terminalen och spara svaret:
    `<din curl> > lek/mingolf_exempel.json`
-5. Kolla hur klubben anges i anropet. Är det ett id i stället för namnet,
-   skriv upp id:t för de klubbar du spelar på.
+5. Kolla hur klubben och banan anges i anropet. Hos MinGolf är det två id:n:
+   klubbens id i själva adressen och banans id i `courseId`. Skriv upp båda
+   för de klubbar du spelar på.
 
 cURL-kommandot innehåller din inloggningscookie. Klistra inte in det i en chatt
 och committa det aldrig. `lek/mingolf_exempel.json` ligger i `.gitignore`,
-eftersom starttidslistan kan innehålla andra spelares namn.
+eftersom starttidslistan innehåller andra spelares kön och handicap.
 
 Vill du ha hjälp kan du i stället ge kodagenten den här prompten:
 
@@ -34,11 +35,12 @@ Vill du ha hjälp kan du i stället ge kodagenten den här prompten:
 Jag är inloggad på mingolf.golf.se i Chrome. Använd webbläsarverktyget, öppna
 tidsbokningen för <klubb> och hitta det nätverksanrop som hämtar starttiderna.
 Berätta vilken URL, vilka parametrar och vilka cookies/headers det behöver,
-hur klubben anges (namn eller id), och visa hur svaret ser ut. Boka ingenting.
+hur klubb och bana anges (namn eller id), och visa hur svaret ser ut. Boka ingenting.
 ```
 
 **Klart när:** `lek/mingolf_exempel.json` innehåller tider, och du vet vilken
-URL, vilka parametrar, vilken cookie och vilket klubb-id anropet behöver.
+URL, vilka parametrar, vilken cookie och vilka id:n för klubb och bana anropet
+behöver.
 
 ---
 
@@ -61,8 +63,16 @@ ut, uppdatera MINGOLF_COOKIE". Skicka inte playersInfo vidare till modellen.
 Lägg till i FUNCTIONS och SCHEMAS (club som enum av CLUBS, date som ÅÅÅÅ-MM-DD).
 ```
 
-Lägg cookien i `.env` som `MINGOLF_COOKIE=...`, aldrig i koden. Den går ut
-efter ett tag, och då får du hämta en ny från DevTools.
+Lägg cookien i `.env`, aldrig i koden. Ta bara delen från `mgat=` fram till
+första `;`:
+
+```
+MINGOLF_COOKIE=mgat=eyJ...
+```
+
+Cookien gäller bara i ungefär 30 minuter. Ger verktyget "inloggningen har gått
+ut", logga in på MinGolf igen, hämta en ny cookie från DevTools och byt ut
+värdet.
 
 **Klart när:**
 `uv run --env-file .env python -c "import tools; print(tools.get_next_tee_time('Wittsjö Golfklubb', '<datum>'))"`
@@ -82,6 +92,6 @@ get_current_time först om användaren säger "i dag" eller "i morgon".
 Uppdatera README:n: nytt verktyg, MINGOLF_COOKIE i .env och en exempelfråga.
 ```
 
-**Klart när:** i appen ger _"finns det någon ledig tid på <klubb> i morgon?"_
+**Klart när:** i appen ger _"finns det någon ledig tid på Wittsjö i morgon?"_
 🔧-rader för `get_current_time` och `get_next_tee_time`, och svaret stämmer med
 MinGolf.
