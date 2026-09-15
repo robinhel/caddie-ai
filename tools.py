@@ -144,9 +144,11 @@ def get_free_tee_times(club, date, course=None):
             free.append(f"{start:%H:%M} ({a['availableSlots']})")
     where = f"{c['name']}, {b['name']}, {date}"
     others = [x["name"] for x in courses if x is not b]
-    where += f" (klubbens andra banor: {', '.join(others)})" if others else ""
     if not free:
-        return f"Inga lediga tider på {where}."
+        # säg rakt ut att andra banor kan ha tider, annars tror modellen att hela klubben är full
+        tip = f" Klubbens andra banor kan ha lediga tider: {', '.join(others)}." if others else ""
+        return f"Inga lediga tider på {where}.{tip}"
+    where += f" (klubbens andra banor: {', '.join(others)})" if others else ""
     return f"{len(free)} lediga tider på {where}, antal lediga platser inom parentes: {', '.join(free)}"
 
 
@@ -311,4 +313,5 @@ if __name__ == "__main__":
     assert "inga öppna banor" in get_free_tee_times("Ringsjö", "2099-06-01")
     _get_json = lambda *a, **k: {"slots": [slot("2000-01-01T08:00:00Z")]}  # redan passerad
     assert get_free_tee_times("Wittsjö", "2000-01-01").startswith("Inga lediga")
+    assert "kan ha lediga tider: 9-hålsbanan" in get_free_tee_times("Ringenäs", "2000-01-01", course="18")
     print("tools ok")

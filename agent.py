@@ -41,6 +41,22 @@ def summarize(name, result):
     return str(result)[:150]
 
 
+def strip_rule_ref(messages):
+    """Tar bort ett avslutande "(Regel …)" från svaret om modellen inte sökt i regelboken
+    sedan senaste frågan. Promptregeln räcker inte, modellen lägger ibland till en ändå."""
+    last_user = max(i for i, m in enumerate(messages) if m["role"] == "user")
+    searched = any(
+        c["function"]["name"] == "search_knowledge_base"
+        for m in messages[last_user:]
+        for c in m.get("tool_calls") or []
+    )
+    answer = messages[-1].get("content") or ""
+    if not searched:
+        answer = re.sub(r"\s*\((?:regel|rule|ingen regel)[^)]*\)\s*$", "", answer, flags=re.I)
+        messages[-1]["content"] = answer  # historiken är det appen ritar upp
+    return answer
+
+
 def run(messages, log=print):
     """Agentloopen: fortsätt tills modellen svarar utan att be om ett verktyg.
     Lägger till allt i messages och returnerar (svar, tokens)."""
@@ -62,7 +78,7 @@ def run(messages, log=print):
 
         if not reply.tool_calls:
             log(f"steg {step}: svarar utan verktyg")
-            return reply.content, tokens
+            return strip_rule_ref(messages), tokens
 
         for call in reply.tool_calls:
             args = json.loads(call.function.arguments)
