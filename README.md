@@ -9,7 +9,7 @@ När du ställer en fråga skickas den till en språkmodell (`gpt-oss-120b` via 
 - **`search_knowledge_base`** söker i golfreglerna och hämtar de tre mest relevanta textbitarna. Det är den viktigaste funktionen.
 - **`calculate`** räknar ut matte, t.ex. hur många slag det blir med plikt. Den kör bara siffror och `+ - * / % **`, aldrig godtycklig kod.
 - **`get_current_time`** ger dagens datum och tid.
-- **`get_weather`** är bara en låtsasfunktion från början av projektet och svarar alltid "15 grader och sol".
+- **`get_weather`** hämtar vädret just nu och en prognos på 3 dagar från Open-Meteo (gratis, ingen API-nyckel).
 
 Agenten kör i en loop: modellen ber om ett verktyg, får resultatet och kan be om ett till. Det fortsätter tills den har ett svar, men högst 10 steg så att den inte fastnar.
 
@@ -70,15 +70,13 @@ I webbappen syns verktygsanropen som små 🔧-rader, så man kan se vad agenten
 
 ## Testa
 
-Både `tools.py` och `rag.py` har några enkla tester längst ner i filen:
+`tools.py` har några enkla tester längst ner i filen:
 
 ```
 uv run tools.py
-uv run rag.py
 ```
 
 ## Begränsningar
 
 - Agenten vet bara det som står i regelboken. Lokala regler eller tolkningar från din klubb känner den inte till.
 - Den hämtar bara tre textbitar per sökning. Ibland missar den därför något, och då måste den söka igen.
-- Det är ett skolprojekt, så lita på en riktig domare om det gäller något viktigt 😄
