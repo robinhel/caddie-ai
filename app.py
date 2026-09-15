@@ -14,17 +14,22 @@ with st.sidebar:
         del st.session_state.messages  # blocket ovan återställer allt vid rerun
         st.rerun()
 
+calls = {}  # tool_call_id -> "namn(argument)", så resultatet hamnar under rätt anrop
 for m in st.session_state.messages:
-    # assistant utan content är ett verktygsanrop, inget att visa
     if m["role"] in ("user", "assistant") and m.get("content"):
         st.chat_message(m["role"]).write(m["content"])
-    elif m["role"] == "tool":
-        st.caption(f"🔧 {m['content'][:200]}")
+    for c in m.get("tool_calls") or []:
+        calls[c["id"]] = f"{c['function']['name']}({c['function']['arguments']})"
+    if m["role"] == "tool":
+        with st.expander(f"🔧 `{calls[m['tool_call_id']]}`"):
+            st.text(m["content"])
 
 if prompt := st.chat_input("Fråga något...", submit_mode="disable"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.spinner("Tänker..."):
-        _, st.session_state.tokens = agent.run(
-            st.session_state.messages, log=lambda _: None
-        )
-    st.rerun()
+        answer, st.session_state.tokens = agent.run(st.session_state.messages)
+    if answer and answer.startswith("ERROR"):
+        st.chat_message("user").write(prompt)
+        st.error(answer)
+    else:
+        st.rerun()
