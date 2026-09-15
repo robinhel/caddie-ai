@@ -2,7 +2,10 @@
 
 import ast
 import inspect
+import json
 import operator
+import urllib.parse
+import urllib.request
 from datetime import datetime
 
 import rag
@@ -37,8 +40,36 @@ def calculate(expression):
     return _eval(ast.parse(expression, mode="eval").body)
 
 
+def _get_json(url, **params):
+    with urllib.request.urlopen(f"{url}?{urllib.parse.urlencode(params)}", timeout=10) as r:
+        return json.load(r)
+
+
 def get_weather(city):
-    return f"15 degrees and sunny in {city}"
+    """Vädret just nu och en prognos på 3 dagar från Open-Meteo."""
+    places = _get_json(
+        "https://geocoding-api.open-meteo.com/v1/search", name=city, count=1
+    ).get("results")
+    if not places:
+        return f"ERROR: hittade ingen plats som heter '{city}'"
+    p = places[0]
+    w = _get_json(
+        "https://api.open-meteo.com/v1/forecast",
+        latitude=p["latitude"],
+        longitude=p["longitude"],
+        current="temperature_2m,precipitation,wind_speed_10m,cloud_cover",
+        daily="temperature_2m_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max",
+        forecast_days=3,
+        wind_speed_unit="ms",
+        timezone="auto",
+    )
+    return {
+        "plats": f"{p['name']}, {p.get('country', '')}",
+        "nu": w["current"],
+        # en dict per dag i stället för parallella listor, så modellen inte blandar ihop dagarna
+        "prognos": [dict(zip(w["daily"], day)) for day in zip(*w["daily"].values())],
+        "enheter": {**w["current_units"], **w["daily_units"]},
+    }
 
 
 def search_knowledge_base(query):
@@ -100,7 +131,7 @@ SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": "Current weather in a city.",
+            "description": "Current weather and a 3-day forecast for a city (temperature, rain, wind, cloud cover).",
             "parameters": {
                 "type": "object",
                 "properties": {"city": {"type": "string", "description": "City name"}},
