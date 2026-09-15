@@ -10,7 +10,7 @@ När du ställer en fråga skickas den till en språkmodell (`gpt-oss-120b` via 
 - **`calculate`** räknar ut matte, t.ex. hur många slag det blir med plikt. Den kör bara siffror och `+ - * / % **`, aldrig godtycklig kod.
 - **`get_current_time`** ger dagens datum och tid.
 - **`get_weather`** hämtar vädret just nu och en prognos på 3 dagar från Open-Meteo (gratis, ingen API-nyckel).
-- **`get_next_tee_time`** hämtar nästa lediga starttid på en golfklubb från MinGolf. Den läser bara tider och bokar aldrig något. Just nu finns bara Wittsjö Golfklubb inlagd (i `CLUBS` i `tools.py`).
+- **`get_free_tee_times`** hämtar alla lediga starttider för en dag på en golfklubb från MinGolf, så att agenten kan svara på t.ex. om en viss tid är ledig. Den läser bara tider och bokar aldrig något. Just nu finns bara Wittsjö Golfklubb inlagd (i `CLUBS` i `tools.py`).
 
 Agenten kör i en loop: modellen ber om ett verktyg, får resultatet och kan be om ett till. Det fortsätter tills den har ett svar, men högst 10 steg så att den inte fastnar.
 
@@ -72,6 +72,7 @@ I webbappen syns verktygsanropen som små 🔧-rader, så man kan se vad agenten
 - Vad räknas som "ground under repair"?
 - Jag slog ut ur banan två gånger på samma hål, hur många slag har jag då?
 - Finns det någon ledig tid på Wittsjö i morgon?
+- Är 16:00 ledig på Wittsjö den 17 september?
 
 ## Testa
 

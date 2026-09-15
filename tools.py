@@ -83,8 +83,8 @@ CLUBS = {
 }
 
 
-def get_next_tee_time(club, date):
-    """Första lediga starttid i MinGolf som inte redan passerat. Läser bara, bokar aldrig."""
+def get_free_tee_times(club, date):
+    """Alla lediga starttider i MinGolf som inte redan passerat. Läser bara, bokar aldrig."""
     if club not in CLUBS:
         return f"ERROR: okänd klubb '{club}'. Klubbar som finns: {', '.join(CLUBS)}"
     club_id, course_id = CLUBS[club]
@@ -101,12 +101,15 @@ def get_next_tee_time(club, date):
             return "ERROR: inloggningen har gått ut, uppdatera MINGOLF_COOKIE"
         raise
     now = datetime.now(STOCKHOLM)
+    free = []
     for slot in sorted(data["slots"], key=lambda s: s["time"]):
         a = slot["availablity"]  # sic, stavat så av MinGolf
         start = datetime.fromisoformat(slot["time"]).astimezone(STOCKHOLM)
         if a["bookable"] and not slot["isLocked"] and a["availableSlots"] > 0 and start > now:
-            return f"{start:%H:%M}, {a['availableSlots']} lediga platser"
-    return f"Inga lediga tider på {club} {date}."
+            free.append(f"{start:%H:%M} ({a['availableSlots']})")
+    if not free:
+        return f"Inga lediga tider på {club} {date}."
+    return f"Lediga tider på {club} {date}, antal lediga platser inom parentes: {', '.join(free)}"
 
 
 def search_knowledge_base(query):
@@ -123,7 +126,7 @@ FUNCTIONS = {
     "calculate": calculate,
     "get_weather": get_weather,
     "search_knowledge_base": search_knowledge_base,
-    "get_next_tee_time": get_next_tee_time,
+    "get_free_tee_times": get_free_tee_times,
 }
 
 
@@ -205,11 +208,12 @@ SCHEMAS = [
     {
         "type": "function",
         "function": {
-            "name": "get_next_tee_time",
+            "name": "get_free_tee_times",
             "description": (
-                "Next free tee time (Swedish local time) at a golf club on a given date, "
-                "from MinGolf. Read-only, never books. Use get_current_time first if the "
-                "user says 'today' or 'tomorrow'."
+                "All free tee times (Swedish local time) at a golf club on a given date, "
+                "from MinGolf. A time missing from the list is full, blocked or already "
+                "passed. Read-only, never books. Use get_current_time first if the user "
+                "says 'today' or 'tomorrow'."
             ),
             "parameters": {
                 "type": "object",
@@ -232,7 +236,7 @@ if __name__ == "__main__":
     assert call("get_current_time", {"": {}}).startswith("20")
     assert call("nope", {}).startswith("ERROR")
 
-    assert get_next_tee_time("Okänd GK", "2099-01-01").startswith("ERROR")
+    assert get_free_tee_times("Okänd GK", "2099-01-01").startswith("ERROR")
     # fejka MinGolf-svaret: spärrad, full, låst och ledig tid, i omvänd ordning
     slot = lambda t, bookable=True, locked=False, free=2: {
         "time": t, "isLocked": locked, "playersInfo": ["Spelare man (20,0)"],
@@ -244,7 +248,7 @@ if __name__ == "__main__":
         slot("2099-06-01T08:10:00Z", free=0),
         slot("2099-06-01T08:00:00Z", bookable=False),
     ]}
-    assert get_next_tee_time("Wittsjö Golfklubb", "2099-06-01") == "11:00, 2 lediga platser"
+    assert get_free_tee_times("Wittsjö Golfklubb", "2099-06-01").endswith(": 11:00 (2)")
     _get_json = lambda *a, **k: {"slots": [slot("2000-01-01T08:00:00Z")]}  # redan passerad
-    assert get_next_tee_time("Wittsjö Golfklubb", "2000-01-01").startswith("Inga lediga")
+    assert get_free_tee_times("Wittsjö Golfklubb", "2000-01-01").startswith("Inga lediga")
     print("tools ok")
