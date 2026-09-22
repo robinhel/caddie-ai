@@ -2,7 +2,7 @@ import streamlit as st
 
 import agent
 
-st.title("LIA-agent")
+st.title("caddie-ai")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [agent.SYSTEM]
