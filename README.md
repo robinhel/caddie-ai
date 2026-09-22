@@ -1,6 +1,6 @@
 # LIA-agent – en golfregel-assistent
 
-Det här är en liten AI-agent som jag byggt under min LIA. Man ställer frågor om golfreglerna och agenten letar upp svaret i den officiella regelboken, i stället för att hitta på något. Tanken var att lära mig hur en agent faktiskt fungerar under huven: loopen, verktygen och RAG. Därför är allt skrivet för hand, utan ramverk som LangChain.
+Det här är en liten AI-agent som jag byggt inför min LIA. Man ställer frågor om golfreglerna och agenten letar upp svaret i den officiella regelboken som är ragad, i stället för att hitta på något. Tanken var att lära mig hur en agent faktiskt fungerar under huven: loopen, verktygen och RAG. Därför är allt skrivet för hand, utan ramverk som LangChain.
 
 ## Vad agenten gör
 
